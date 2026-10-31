@@ -220,7 +220,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-secure-store",
     "expo-web-browser",
     "expo-localization",
-    "./plugins/withAndroidSigning",
+    ...(IS_TV ? [] : ["./plugins/withAndroidSigning"]),
     "./plugins/withCleartextTraffic",
     "./plugins/withDevVariant",
     "./plugins/withFmtConstevalFix",
