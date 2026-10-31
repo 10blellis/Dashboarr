@@ -13,9 +13,10 @@ const nativeBuildNumber = major * 10000 + minor * 100 + patch;
 // on the same device. Slug and EAS project stay shared so OTA channels still
 // route correctly (dev binaries pull the "development" channel via eas.json).
 const IS_DEV = process.env.APP_VARIANT === "development";
-const APP_NAME = IS_DEV ? "Dashboarr Dev" : "Dashboarr";
-const BUNDLE_ID = IS_DEV ? "com.dashboarr.app.dev" : "com.dashboarr.app";
-const APP_SCHEME = IS_DEV ? "dashboarr-dev" : "dashboarr";
+const IS_TV = process.env.EXPO_TV === "1" || process.env.EXPO_TV === "true";
+const APP_NAME = IS_TV ? "Dashboarr TV" : IS_DEV ? "Dashboarr Dev" : "Dashboarr";
+const BUNDLE_ID = IS_TV ? "com.dashboarr.tv" : IS_DEV ? "com.dashboarr.app.dev" : "com.dashboarr.app";
+const APP_SCHEME = IS_TV ? "dashboarr-tv" : IS_DEV ? "dashboarr-dev" : "dashboarr";
 
 // google-services.json holds real FCM credentials, so it's gitignored and a
 // fresh clone won't have it. Local dev builds must still work: when the file
@@ -54,7 +55,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   "owner": "dashboarr",
   slug: "dashboarr",
   version: pkg.version,
-  orientation: "portrait",
+  orientation: IS_TV ? "landscape" : "portrait",
   icon: "./assets/icon.png",
   userInterfaceStyle: "dark",
   newArchEnabled: true,
@@ -67,12 +68,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   // Binary and update must share the same runtimeVersion; bumping the native
   // `version` (or adding any native code) cuts a new runtime and requires a
   // fresh TestFlight / Play Store build.
-  updates: {
-    url: "https://u.expo.dev/2e40d2d5-f7c5-4c28-922c-40e2a5ab2a8c",
-    requestHeaders: {
-      "expo-channel-name": process.env.EAS_UPDATE_CHANNEL ?? "production",
-    },
-  },
+  updates: IS_TV
+    ? { enabled: false }
+    : {
+        url: "https://u.expo.dev/2e40d2d5-f7c5-4c28-922c-40e2a5ab2a8c",
+        requestHeaders: {
+          "expo-channel-name": process.env.EAS_UPDATE_CHANNEL ?? "production",
+        },
+      },
   runtimeVersion: {
     policy: "fingerprint",
   },
@@ -161,7 +164,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // applied at Gradle build time by plugins/withDevVariant — that lets one
     // prebuilt android/ project produce both variants by toggling APP_VARIANT
     // when invoking gradlew, without a second prebuild.
-    package: "com.dashboarr.app",
+    package: IS_TV ? "com.dashboarr.tv" : "com.dashboarr.app",
     versionCode: nativeBuildNumber,
     ...(HAS_GOOGLE_SERVICES ? { googleServicesFile: GOOGLE_SERVICES_FILE } : {}),
     // VIEW intent filters for .torrent files (file managers, browser
@@ -205,6 +208,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   plugins: [
+    [
+      "@react-native-tvos/config-tv",
+      {
+        isTV: IS_TV,
+        androidTVRequired: IS_TV,
+        removeFlipperOnAndroid: true,
+      },
+    ],
     "expo-router",
     "expo-secure-store",
     "expo-web-browser",
