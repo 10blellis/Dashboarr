@@ -28,7 +28,9 @@ function injectVariantBlock(buildGradle) {
   buildGradle = buildGradle.replace(
     /(buildConfigField\s+"String",\s+"REACT_NATIVE_RELEASE_LEVEL"[^\n]*\n)/,
     `$1
-        if (System.getenv("APP_VARIANT") == "development") {
+        if (System.getenv("EXPO_TV") == "1" || System.getenv("EXPO_TV") == "true") {
+            resValue "string", "app_name", "Dashboarr TV"
+        } else if (System.getenv("APP_VARIANT") == "development") {
             applicationIdSuffix ".dev"
             resValue "string", "app_name", "Dashboarr Dev"
         } else {
